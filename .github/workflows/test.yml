@@ -17,8 +17,15 @@ jobs:
         run: docker build -t job_ai_assistant:ci .
 
       - name: Run Pytest
+        env:
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          LANGSMITH_TRACING: "true"
+          LANGSMITH_PROJECT: job-ai-assistant-ci
         run: |
           docker run --rm \
+            -e LANGSMITH_API_KEY \
+            -e LANGSMITH_TRACING \
+            -e LANGSMITH_PROJECT \
             -v "$PWD:/app" \
             -w /app \
             job_ai_assistant:ci \
