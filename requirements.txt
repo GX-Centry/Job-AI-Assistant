@@ -1,0 +1,6 @@
+langgraph
+langchain
+langsmith
+pytest
+langgraph-cli[inmem]
+pytest-cov
