@@ -1,0 +1,24 @@
+services:
+  dev:
+    build: .
+    image: job_ai_assistant:dev
+
+    working_dir: /app
+
+    volumes:
+      - .:/app
+
+    env_file:
+      - .env
+
+    ports:
+      - "127.0.0.1:2024:2024"
+
+    command:
+      - langgraph
+      - dev
+      - --host
+      - 0.0.0.0
+      - --no-browser
+
+    init: true

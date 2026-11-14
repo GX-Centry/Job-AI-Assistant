@@ -5,3 +5,4 @@ pytest
 langgraph-cli[inmem]
 pytest-cov
 ruff
+pydantic-settings

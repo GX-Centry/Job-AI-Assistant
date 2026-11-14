@@ -5,3 +5,5 @@ htmlcov/
 __pycache__/
 *.py[cod]
 .langgraph_api/
+.env.*
+!.env.example
