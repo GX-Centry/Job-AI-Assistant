@@ -13,6 +13,7 @@ services:
 
     ports:
       - "127.0.0.1:2024:2024"
+      - "8000:8000"
 
     command:
       - langgraph
