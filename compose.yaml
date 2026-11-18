@@ -1,4 +1,5 @@
 services:
+  # LangGraph 开发服务(langgraph dev,端口 2024)。
   dev:
     build: .
     image: job_ai_assistant:dev
@@ -23,3 +24,56 @@ services:
       - --no-browser
 
     init: true
+
+  # 聊天 API(FastAPI,容器内 8000),由 Compose 直接管理:
+  # 带健康检查,日志用 `docker compose logs -f api` 观察。
+  #
+  # 数据持久化在命名卷 agent-data(/app/data),重启 API 后
+  # 会话与历史保留。从“dev 容器手工 uvicorn”切换到本服务另行安排:
+  # 切换时移除 dev 服务的 "8000:8000" 映射,并把
+  # JOB_AGENT_API_HOST_PORT 设为 8000(见 README 切换步骤)。
+  # 默认宿主端口 18000,避免与当前在线的 8000 转发冲突。
+  api:
+    build: .
+    image: job_ai_assistant:dev
+
+    working_dir: /app
+
+    volumes:
+      - .:/app
+      - agent-data:/app/data
+
+    env_file:
+      - .env
+
+    environment:
+      PYTHONUNBUFFERED: "1"
+
+    ports:
+      - "127.0.0.1:${JOB_AGENT_API_HOST_PORT:-18000}:8000"
+
+    command:
+      - uvicorn
+      - job_agent.api.app:app
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8000"
+
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    init: true
+
+volumes:
+  agent-data:

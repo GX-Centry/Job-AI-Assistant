@@ -8,6 +8,12 @@ def test_settings_defaults():
     assert settings.log_level == "INFO"
     assert settings.model_temperature == 0.0
 
+    # M1-c ASR 档位(2026-11-18 评测拍板:small/int8,离线缓存目录)。
+    assert settings.asr_model == "small"
+    assert settings.asr_compute_type == "int8"
+    assert settings.asr_model_cache_dir == "data/asr_models"
+    assert settings.asr_max_seconds == 600.0
+
 
 def test_settings_env_override(monkeypatch):
     monkeypatch.setenv("JOB_AGENT_APP_ENV", "test")

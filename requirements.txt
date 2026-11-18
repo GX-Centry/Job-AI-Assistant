@@ -11,3 +11,11 @@ langgraph-checkpoint-sqlite>=3.0,<4.0
 fastapi>=0.115,<1.0
 uvicorn[standard]>=0.34,<1.0
 httpx>=0.27,<1.0
+markitdown[pdf,docx,pptx,xlsx]>=0.1.9,<0.2
+
+# M1-c ASR:faster-whisper(small/int8,服务端本机转写)。av 19 与 faster-whisper
+# 不兼容(实测 av.open 的 metadata_errors 参数被移除),锁定 13.x;详见
+# experiments/tool-research/REPORT.md §2。
+faster-whisper>=1.2.1,<2
+ctranslate2>=4.9.0,<5
+av>=13.1.0,<14

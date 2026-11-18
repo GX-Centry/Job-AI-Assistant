@@ -1,0 +1,35 @@
+# M0-R3 隔离验收覆盖层 —— 必须搭配独立项目名与显式环境文件使用:
+#   docker compose --env-file deploy/accept.env -p m0r3-accept \
+#     -f compose.yaml -f deploy/compose.accept.yaml up -d --build api
+#
+# 隔离要点:
+# - `--env-file deploy/accept.env` 把 Compose **插值来源**也切换为占位文件,
+#   项目根目录真实 .env 不再被读取(包括 ${JOB_AGENT_API_HOST_PORT} 插值);
+# - dev 服务挂到专属 profile "disabled"(默认不启动),并把宿主端口、卷、
+#   env_file 全部覆写为空/占位 —— 即便外部 COMPOSE_PROFILES 意外启用它,
+#   也不发布端口、不挂载卷、不读真实 .env,无任何副作用;
+# - 所有命令显式指定 api 服务(见上);专用宿主端口 18000、专用数据卷;
+# - 不 bind 挂载工作区,直接验证构建出的镜像自身完整。
+# (注:该 Compose 版本不支持 services.*.enabled 属性,故用此防御组合。)
+services:
+  dev:
+    profiles: ["disabled"]
+    env_file: !override
+      - deploy/accept.env
+    ports: !override []
+    volumes: !override []
+
+  api:
+    image: job_ai_assistant:m0r3-accept
+
+    volumes: !override
+      - agent-data-m0r3:/app/data
+
+    env_file: !override
+      - deploy/accept.env
+
+    ports: !override
+      - "127.0.0.1:18000:8000"
+
+volumes:
+  agent-data-m0r3:

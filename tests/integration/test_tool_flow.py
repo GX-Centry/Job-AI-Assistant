@@ -29,7 +29,11 @@ def test_agent_tool_call_roundtrip():
 
     class FakeToolCallingModel:
         def bind_tools(self, tools):
-            assert [tool.name for tool in tools] == ["text_length"]
+            # M1-c:注册表里现在有语音转写工具,必须一并绑定到模型。
+            assert [tool.name for tool in tools] == [
+                "text_length",
+                "transcribe_audio",
+            ]
             return RunnableLambda(fake_model)
 
     model = FakeToolCallingModel()

@@ -1,1 +1,48 @@
+# 真实环境文件与本地凭据:递归排除根目录与任意嵌套目录,
+# 仅显式放行配置示例(.env.example)。
 .env
+**/.env
+.env.*
+**/.env.*
+!.env.example
+!**/.env.example
+deploy/accept.local.env
+
+# Git 与编辑器元数据
+.git
+.gitattributes
+.github
+.gitignore
+.vscode
+.idea
+
+# 业务运行时数据(SQLite 等)
+data
+*.sqlite
+*.sqlite3
+
+# LangGraph dev 本地缓存
+.langgraph_api/
+
+# Python 缓存与虚拟环境
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+*.egg-info/
+
+# 前端依赖与构建产物
+node_modules/
+**/node_modules/
+frontend/dist/
+dist/
+
+# 其他本地产物
+*.log
+.coverage
+htmlcov/
+.pytest_cache

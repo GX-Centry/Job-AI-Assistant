@@ -7,7 +7,19 @@ on:
     branches: [main]
 
 jobs:
+  secrets-check:
+    runs-on: ubuntu-latest
+    outputs:
+      has-tracing-key: ${{ steps.probe.outputs.has-key }}
+    steps:
+      - id: probe
+        run: >-
+          echo "has-key=${{ secrets.LANGSMITH_API_KEY != '' }}"
+          >> "$GITHUB_OUTPUT"
+
   test:
+    name: Backend (offline)
+    needs: secrets-check
     runs-on: ubuntu-latest
 
     steps:
@@ -32,7 +44,58 @@ jobs:
             job_ai_assistant:ci \
             ruff format --check .
 
+      # 默认离线测试:不注入任何模型、付费服务或追踪凭据。
+      # 覆盖率门禁(>=90%)在此显式声明,pytest.ini 只保留报告。
       - name: Run Pytest
+        run: |
+          docker run --rm \
+            -v "$PWD:/app" \
+            -w /app \
+            job_ai_assistant:ci \
+            python -m pytest --cov-fail-under=90
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 24:与本地验证过的运行时(24.21.0 / npm 11 / lockfileVersion 3)一致。
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # 默认 Vitest 测试池;仅在 CI 复现故障时才引入有证据的替代配置。
+      - name: Test
+        working-directory: frontend
+        run: npm test
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+  # 追踪能力保留为可选:仅当仓库配置了 LANGSMITH_API_KEY 时额外运行一次,
+  # 与默认离线测试分开;不配置密钥时整个 job 跳过。
+  test-traced:
+    name: Backend (LangSmith traced, opt-in)
+    needs: [secrets-check, test]
+    if: needs.secrets-check.outputs.has-tracing-key == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t job_ai_assistant:ci-traced .
+
+      - name: Run Pytest with tracing
         env:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
           LANGSMITH_TRACING: "true"
@@ -44,5 +107,5 @@ jobs:
             -e LANGSMITH_PROJECT \
             -v "$PWD:/app" \
             -w /app \
-            job_ai_assistant:ci \
-            python -m pytest
+            job_ai_assistant:ci-traced \
+            python -m pytest --cov-fail-under=90
